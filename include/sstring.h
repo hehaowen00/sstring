@@ -79,15 +79,17 @@ size_t pow2(size_t n);
 void shift(void* dest, void * src, size_t len);
 void zero(void* p, size_t n);
 
+#define HEADER_OFFSET sizeof(size_t) * 2
+
 sstr_t sstr_new(size_t cap)
 {
     cap = pow2(cap + 1);
-    size_t* ptr = calloc((sizeof(size_t) * 2) + (sizeof(char) * cap), 1);
+    size_t* ptr = (size_t*)calloc(HEADER_OFFSET + (sizeof(char) * cap), 1);
 
     ptr[0] = cap;
     ptr[1] = 0;
 
-    return (char*)ptr + (sizeof(size_t) * 2);
+    return (char*)ptr + HEADER_OFFSET;
 }
 
 sstr_t sstr_from(const char* str, size_t len)
@@ -116,14 +118,14 @@ int8_t sstr_reserve(sstr_t* s, size_t additional)
 
     size_t cap = sstr_cap(*s);
     size_t new_cap = pow2(cap + additional);
-    size_t* ptr = realloc(sstr_ptr_(*s), sizeof(size_t) * 2 + new_cap);
+    size_t* ptr = (size_t*)realloc(sstr_ptr_(*s), HEADER_OFFSET + new_cap);
 
     if (!ptr) 
     {
         return 1;
     }
     
-    *s = (char*)ptr + (sizeof(size_t) * 2);
+    *s = (char*)ptr + HEADER_OFFSET;
     sstr_set_cap(*s, new_cap);
 
     return 0;
@@ -139,13 +141,13 @@ int8_t sstr_shrink_to_fit(sstr_t* s)
         cap /= 2;
     }
 
-    size_t* ptr = realloc(sstr_ptr_(*s), sizeof(size_t) * 2 + cap);
+    size_t* ptr = (size_t*)realloc(sstr_ptr_(*s), HEADER_OFFSET + cap);
     if (!ptr)
     {
         return 1;
     }
 
-    *s = (char*)ptr + (sizeof(size_t) * 2);
+    *s = (char*)ptr + HEADER_OFFSET;
     sstr_set_cap(*s, cap);
 
     return 0;
@@ -189,7 +191,7 @@ size_t sstr_len(sstr_t s)
 
 void* sstr_ptr_(sstr_t s)
 {
-    return (s - (sizeof(size_t) * 2));
+    return (s - HEADER_OFFSET);
 }
 
 void sstr_set_cap(sstr_t s, size_t len)
@@ -646,8 +648,8 @@ size_t pow2(size_t n)
 
 void shift(void * dest, void * src, size_t len)
 {
-    const char* s = src;
-    char* d = dest;
+    const char* s = (const char*)src;
+    char* d = (char*)dest;
 
     if (d < s)
     {
@@ -678,4 +680,3 @@ void zero(void* p, size_t n)
 }
 
 #endif // SSTRING_IMPL
-
